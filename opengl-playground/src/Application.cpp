@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
 int main(void)
@@ -14,12 +15,22 @@ int main(void)
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
     if (!window)
     {
+        std::cout << "Error: could not create GLFW window\n";
         glfwTerminate();
         return -1;
     }
 
     /* Make the window's context current */
     glfwMakeContextCurrent(window);
+    std::cout << "GL VERSION = " << glGetString(GL_VERSION) << "\n";
+
+    GLenum error = glewInit();
+    if (error != GLEW_OK)
+    {
+        std::cout << "Error: " << glewGetErrorString(error) << "\n";
+        return -1;
+    }
+    std::cout << "GLEW VERSION = " << glewGetString(GLEW_VERSION) << "\n";
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
