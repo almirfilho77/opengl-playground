@@ -32,6 +32,28 @@ int main(void)
     }
     std::cout << "GLEW VERSION = " << glewGetString(GLEW_VERSION) << "\n";
 
+    float positions[6] = {
+        -0.5f,  -0.5f,
+         0.5f,  -0.5f,
+         0.0f,   0.5f,
+    };
+
+    // This is the index of the buffer of data that we will create
+    unsigned int buffer_index;                      
+
+    // Generate an internal buffer and assign an index to it
+    glGenBuffers(1, &buffer_index);         
+
+    // Select the kind of buffer. In this case, an array of memory
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_index); 
+
+    // Create the actual buffer of data, specifying at least its size
+    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+
+    // Set the specification of the attribute "vertex position" in the vertex for the buffer
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *)0);
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -39,10 +61,7 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw triangle
-        glBegin(GL_TRIANGLES);
-        glVertex2f(-0.5f, -0.5f);
-        glVertex2f(0.5f, -0.5f);
-        glVertex2f(0.0f, 0.5f);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         // Draw rectangle
         /*glBegin(GL_QUADS);
@@ -50,7 +69,6 @@ int main(void)
         glVertex2f(0.5f, -0.5f);
         glVertex2f(0.5f, 0.5f);
         glVertex2f(-0.5f, 0.5f);*/
-        glEnd();
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
