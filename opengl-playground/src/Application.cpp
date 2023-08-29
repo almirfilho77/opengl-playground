@@ -3,6 +3,65 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+
+static unsigned int CompileShader(unsigned int type, const std::string& source)
+{
+    unsigned int shader_id = glCreateShader(type);
+    const char* src = source.c_str();
+    glShaderSource(shader_id, 1, &src, nullptr);
+    glCompileShader(shader_id);
+
+    int result;
+    glGetShaderiv(shader_id, GL_COMPILE_STATUS, &result);
+    if (result == GL_FALSE)
+    {
+        int log_length;
+        glGetShaderiv(shader_id, GL_INFO_LOG_LENGTH, &log_length);
+        char* error_message = (char*)alloca(log_length * sizeof(char)); // using alloca function to dynamically allocate this string on the stack (might stack overflow?)
+        glGetShaderInfoLog(shader_id, log_length, &log_length, error_message);
+
+        std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex shader" : "fragment shader") << "\n";
+        std::cout << "Error message: " << error_message << "\n";
+        glDeleteShader(shader_id);
+        return 0;
+    }
+
+    return shader_id;
+}
+
+static unsigned int CreateShader(const std::string& vertex_shader, const std::string& fragment_shader)
+{
+    /*
+    *   Create a program in OpenGL is like generate a buffer,
+    *   it simply gives back an ID for it, but it does not init
+    *   anything.
+    */
+    unsigned int program_id = glCreateProgram();
+
+    /*
+    *   Compile the shaders
+    */
+    unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertex_shader);
+    unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragment_shader);
+
+    /*
+    *   Attach the shaders, meaning to specify what is going to be linked together 
+    */
+    glAttachShader(program_id, vs);
+    glAttachShader(program_id, fs);
+
+    /*
+    * Actually link the program
+    */
+    glLinkProgram(program_id);
+    glValidateProgram(program_id);
+
+    int validation_sucess = 0;
+    glGetProgramiv(program_id, GL_VALIDATE_STATUS, &validation_sucess);
+
+    return program_id;
+}
+
 int main(void)
 {
     GLFWwindow* window;
@@ -39,20 +98,44 @@ int main(void)
     };
 
     // This is the index of the buffer of data that we will create
-    unsigned int buffer_index;                      
+    unsigned int buffer_id;
 
     // Generate an internal buffer and assign an index to it
-    glGenBuffers(1, &buffer_index);         
+    glGenBuffers(1, &buffer_id);
 
     // Select the kind of buffer. In this case, an array of memory
-    glBindBuffer(GL_ARRAY_BUFFER, buffer_index); 
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
 
     // Create the actual buffer of data, specifying at least its size
     glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
 
     // Set the specification of the attribute "vertex position" in the vertex for the buffer
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void *)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void*)0);
+
+    std::string vertex_shader =
+        "#version 330 core\n"
+        "\n"
+        "layout (location = 0) in vec4 position;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   gl_Position = position;\n"
+        "}\n";
+        
+
+    std::string fragment_shader =
+        "#version 330 core\n"
+        "\n"
+        "layout (location = 0) out vec4 color;\n"
+        "\n"
+        "void main()\n"
+        "{\n"
+        "   color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+        "}\n";
+
+    unsigned int shader_id = CreateShader(vertex_shader, fragment_shader);
+    glUseProgram(shader_id);
 
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
@@ -76,6 +159,8 @@ int main(void)
         /* Poll for and process events */
         glfwPollEvents();
     }
+
+    glDeleteProgram(shader_id);
 
     glfwTerminate();
     return 0;
