@@ -138,10 +138,16 @@ int main(void)
     }
     std::cout << "GLEW VERSION = " << glewGetString(GLEW_VERSION) << "\n";
 
-    float positions[6] = {
-        -0.5f,  -0.5f,
-         0.5f,  -0.5f,
-         0.0f,   0.5f,
+    float positions[] = {
+        -0.5f,  -0.5f, //0
+         0.5f,  -0.5f, //1
+         0.5f,   0.5f, //2
+        -0.5f,   0.5f, //3
+    };
+
+    unsigned int indices[] = {
+        0, 1, 2,
+        2, 3, 0,
     };
 
     // This is the index of the buffer of data that we will create
@@ -154,11 +160,17 @@ int main(void)
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
 
     // Create the actual buffer of data, specifying at least its size
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), positions, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW); // Can't resize this to 4 bytes, maybe it needs to store the final ammount of vertices to be drawn
 
     // Set the specification of the attribute "vertex position" in the vertex for the buffer
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void*)0);
+
+    // Index buffer object
+    unsigned int ibo;
+    glGenBuffers(1, &ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
     ShaderSource shader_source = ParseShaderSource("res/shaders/Basic.shader");
 
@@ -177,7 +189,7 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT);
 
         // Draw triangle
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr); // nullptr here because the buffer is already bound to ibo
 
         // Draw rectangle
         /*glBegin(GL_QUADS);
