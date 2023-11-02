@@ -152,6 +152,11 @@ int main(void)
     if (!glfwInit())
         return -1;
 
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);                    // Need to specify in order for the other hints to work
+    //glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);                    // Need to specify in order for the other hints to work
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);  // It implicitly creates and binds a VAO
+    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);    // Need to explicitly create and bind VAO
+
     /* Create a windowed mode window and its OpenGL context */
     window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
     if (!window)
@@ -187,6 +192,11 @@ int main(void)
         2, 3, 0,
     };
 
+    // Create a Vertex Array Object
+    unsigned int vao_id;
+    GLCallVoid(glCreateVertexArrays(1, &vao_id));
+    GLCallVoid(glBindVertexArray(vao_id));
+
     // This is the index of the buffer of data that we will create
     unsigned int buffer_id;
 
@@ -197,16 +207,16 @@ int main(void)
     GLCallVoid(glBindBuffer(GL_ARRAY_BUFFER, buffer_id));
 
     // Create the actual buffer of data, specifying at least its size
-    GLCallVoid(glBufferData(GL_ARRAY_BUFFER, 6 * 2 * sizeof(float), positions, GL_STATIC_DRAW)); // Can't resize this to 4 bytes, maybe it needs to store the final ammount of vertices to be drawn
+    GLCallVoid(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW)); // Can't resize this to 4 bytes, maybe it needs to store the final ammount of vertices to be drawn
 
     // Set the specification of the attribute "vertex position" in the vertex for the buffer
     GLCallVoid(glEnableVertexAttribArray(0));
     GLCallVoid(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void*)0));
 
     // Index buffer object
-    unsigned int ibo;
-    GLCallVoid(glGenBuffers(1, &ibo));
-    GLCallVoid(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo));
+    unsigned int ibo_id;
+    GLCallVoid(glGenBuffers(1, &ibo_id));
+    GLCallVoid(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id));
     GLCallVoid(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
 
     ShaderSource shader_source = ParseShaderSource("res/shaders/Basic.shader");
@@ -223,6 +233,14 @@ int main(void)
     ASSERT(location != -1); //if something has gone wrong or if the uniform has not been used in the shader (striped out in compilation)
     GLCallVoid(glUniform4f(location, 0.3f, 0.5f, 0.8f, 1.0f));
 
+    /* To show that we can reuse the state of the created VAO
+     * even if we unbind everything now
+     */
+    GLCallVoid(glBindVertexArray(0));
+    GLCallVoid(glUseProgram(0));
+    GLCallVoid(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    GLCallVoid(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+
     float r_channel = 0.0f;
     float g_channel = 0.0f;
     float increment = 0.05f;
@@ -231,6 +249,10 @@ int main(void)
     {
         /* Render here */
         GLCallVoid(glClear(GL_COLOR_BUFFER_BIT));
+
+        // Prepare for draw call
+        GLCallVoid(glUseProgram(shader_id));
+        GLCallVoid(glBindVertexArray(vao_id));     // Binding the VAO back, binds back also the vertex buffer and the element buffer that were bound to it before
 
         // Draw shape
         GLCallVoid(glUniform4f(location, r_channel, g_channel, 0.8f, 1.0f));
