@@ -165,6 +165,8 @@ int main(void)
     glfwMakeContextCurrent(window);
     std::cout << "GL VERSION = " << glGetString(GL_VERSION) << "\n";
 
+    glfwSwapInterval(1);
+
     GLenum error = glewInit();
     if (error != GLEW_OK)
     {
@@ -217,14 +219,34 @@ int main(void)
     unsigned int shader_id = CreateShader(shader_source.VertexSource, shader_source.FragmentSource);
     GLCallVoid(glUseProgram(shader_id));
 
+    int location = GLCall(glGetUniformLocation(shader_id, "u_Color"));
+    ASSERT(location != -1); //if something has gone wrong or if the uniform has not been used in the shader (striped out in compilation)
+    GLCallVoid(glUniform4f(location, 0.3f, 0.5f, 0.8f, 1.0f));
+
+    float r_channel = 0.0f;
+    float g_channel = 0.0f;
+    float increment = 0.05f;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
         GLCallVoid(glClear(GL_COLOR_BUFFER_BIT));
 
-        // Draw triangle
+        // Draw shape
+        GLCallVoid(glUniform4f(location, r_channel, g_channel, 0.8f, 1.0f));
         GLCallVoid(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // nullptr here because the buffer is already bound to ibo
+
+        // Animate the color of the shape
+        if (r_channel > 1.0f)
+        {
+            increment = -0.005f;
+        }
+        else if (r_channel < 0.0f)
+        {
+            increment = 0.005f;
+        }
+        r_channel += increment;
+        g_channel += increment;
 
         // Draw rectangle
         /*glBegin(GL_QUADS);
