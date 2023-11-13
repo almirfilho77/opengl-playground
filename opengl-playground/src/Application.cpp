@@ -8,40 +8,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#define ASSERT(x) if (!(x)) __debugbreak();
-#ifdef _DEBUG
+#include "Renderer.h"
 
-#define GLCallVoid(x) GLClearError();\
-    x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))
-
-#define GLCall(x) [&](){\
-    GLClearError();\
-    auto retval = x;\
-    ASSERT(GLLogCall(#x, __FILE__, __LINE__))\
-    return retval;\
-    }()
-#else
-
-#define GlCallVoid(x) x
-#define GlCall(x) x
-
-#endif
-
-static void GLClearError()
-{
-    while (glGetError() != GL_NO_ERROR);
-}
-
-static bool GLLogCall(const char *function, const char *file, int line)
-{
-    while (GLenum error = glGetError())
-    {
-        std::cout << "OpenGL Error (" << error << ") > " << function << " [" << file << ":" << line << "]" << "\n";
-        return false;
-    }
-    return true;
-}
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 struct ShaderSource
 {
@@ -197,27 +167,14 @@ int main(void)
     GLCallVoid(glCreateVertexArrays(1, &vao_id));
     GLCallVoid(glBindVertexArray(vao_id));
 
-    // This is the index of the buffer of data that we will create
-    unsigned int buffer_id;
-
-    // Generate an internal buffer and assign an index to it
-    GLCallVoid(glGenBuffers(1, &buffer_id));
-
-    // Select the kind of buffer. In this case, an array of memory
-    GLCallVoid(glBindBuffer(GL_ARRAY_BUFFER, buffer_id));
-
-    // Create the actual buffer of data, specifying at least its size
-    GLCallVoid(glBufferData(GL_ARRAY_BUFFER, 4 * 2 * sizeof(float), positions, GL_STATIC_DRAW)); // Can't resize this to 4 bytes, maybe it needs to store the final ammount of vertices to be drawn
-
+    VertexBuffer *vb = new VertexBuffer(positions, 4 * 2 * sizeof(float));
+    
     // Set the specification of the attribute "vertex position" in the vertex for the buffer
     GLCallVoid(glEnableVertexAttribArray(0));
     GLCallVoid(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void*)0));
 
     // Index buffer object
-    unsigned int ibo_id;
-    GLCallVoid(glGenBuffers(1, &ibo_id));
-    GLCallVoid(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_id));
-    GLCallVoid(glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW));
+    IndexBuffer* ib = new IndexBuffer(indices, 6);
 
     ShaderSource shader_source = ParseShaderSource("res/shaders/Basic.shader");
 
@@ -285,6 +242,8 @@ int main(void)
     }
 
     glDeleteProgram(shader_id);
+    delete ib;
+    delete vb;
 
     glfwTerminate();
     return 0;
