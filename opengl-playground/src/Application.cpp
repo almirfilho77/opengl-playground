@@ -12,6 +12,8 @@
 
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "VertexArray.h"
+#include "VertexBufferLayout.h"
 
 struct ShaderSource
 {
@@ -163,15 +165,11 @@ int main(void)
     };
 
     // Create a Vertex Array Object
-    unsigned int vao_id;
-    GLCallVoid(glCreateVertexArrays(1, &vao_id));
-    GLCallVoid(glBindVertexArray(vao_id));
-
+    VertexArray* va = new VertexArray();
     VertexBuffer *vb = new VertexBuffer(positions, 4 * 2 * sizeof(float));
-    
-    // Set the specification of the attribute "vertex position" in the vertex for the buffer
-    GLCallVoid(glEnableVertexAttribArray(0));
-    GLCallVoid(glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (const void*)0));
+    VertexBufferLayout* vbl = new VertexBufferLayout();
+    vbl->Push<float>(2);
+    va->AddBuffer(*vb, *vbl);
 
     // Index buffer object
     IndexBuffer* ib = new IndexBuffer(indices, 6);
@@ -209,7 +207,7 @@ int main(void)
 
         // Prepare for draw call
         GLCallVoid(glUseProgram(shader_id));
-        GLCallVoid(glBindVertexArray(vao_id));     // Binding the VAO back, binds back also the vertex buffer and the element buffer that were bound to it before
+        va->Bind();     // Binding the VAO back, binds back also the vertex buffer and the element buffer that were bound to it before
 
         // Draw shape
         GLCallVoid(glUniform4f(location, r_channel, g_channel, 0.8f, 1.0f));
@@ -243,7 +241,9 @@ int main(void)
 
     glDeleteProgram(shader_id);
     delete ib;
+    delete vbl;
     delete vb;
+    delete va;
 
     glfwTerminate();
     return 0;
