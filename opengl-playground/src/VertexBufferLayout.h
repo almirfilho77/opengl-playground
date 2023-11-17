@@ -5,6 +5,8 @@
 
 #include "GL/glew.h"
 
+#include "Renderer.h"
+
 struct VertexBufferElement
 {
 	unsigned int type;

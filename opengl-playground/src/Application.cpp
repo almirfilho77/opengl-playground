@@ -84,6 +84,8 @@ int main(void)
     ib->Unbind();
     shader->Unbind();
 
+    Renderer* renderer = new Renderer();
+
     float r_channel = 0.0f;
     float g_channel = 0.0f;
     float increment = 0.05f;
@@ -91,16 +93,14 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        GLCallVoid(glClear(GL_COLOR_BUFFER_BIT));
+        renderer->Clear();
 
         // Prepare for draw call
         shader->Bind();
-        va->Bind();     // Binding the VAO back, binds back also the vertex buffer and the element buffer that were bound to it before
-
-        // Draw shape
         shader->SetUniform4f("u_Color", r_channel, g_channel, 0.8f, 1.0f);
-        GLCallVoid(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr)); // nullptr here because the buffer is already bound to ibo
-
+        // Draw shape
+        renderer->Draw(*va, *ib, *shader);
+        
         // Animate the color of the shape
         if (r_channel > 1.0f)
         {
@@ -120,6 +120,7 @@ int main(void)
         GLCallVoid(glfwPollEvents());
     }
 
+    delete renderer;
     delete shader;
     delete ib;
     delete vbl;
