@@ -143,11 +143,17 @@ int Shader::m_GetUniformLocation(const std::string& name)
     int location = GLCall(glGetUniformLocation(m_rendererId, name.c_str()));
     if (location == -1)
     {
-        std::cout << "Something is wrong with this uniform. Maybe it was not initialized?\n";
+        std::cout << "Something is wrong with the uniform " << name << ".Maybe it was not initialized ? \n";
     }
 
     m_uniformLocationMap[name] = location;
     return location;
+}
+
+void Shader::SetUniform1i(const std::string& name, int value)
+{
+    int location = m_GetUniformLocation(name);
+    GLCallVoid(glUniform1i(location, value));
 }
 
 void Shader::SetUniform4f(const std::string& name, float v0, float v1, float v2, float v3)

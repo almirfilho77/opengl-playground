@@ -13,6 +13,7 @@
 #include "VertexArray.h"
 #include "VertexBufferLayout.h"
 #include "Shader.h"
+#include "Texture.h"
 
 
 int main(void)
@@ -51,11 +52,15 @@ int main(void)
     }
     std::cout << "GLEW VERSION = " << glewGetString(GLEW_VERSION) << "\n";
 
+    // Enable alpha channel rendering
+    GLCallVoid(glEnable(GL_BLEND));
+    GLCallVoid(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
     float positions[] = {
-        -0.5f,  -0.5f, //0
-         0.5f,  -0.5f, //1
-         0.5f,   0.5f, //2
-        -0.5f,   0.5f, //3
+        -0.5f,  -0.5f, 0.0f, 0.0f, //0
+         0.5f,  -0.5f, 1.0f, 0.0f, //1
+         0.5f,   0.5f, 1.0f, 1.0f, //2
+        -0.5f,   0.5f, 0.0f, 1.0f, //3
     };
 
     unsigned int indices[] = {
@@ -65,8 +70,9 @@ int main(void)
 
     // Create a Vertex Array Object
     VertexArray* va = new VertexArray();
-    VertexBuffer *vb = new VertexBuffer(positions, 4 * 2 * sizeof(float));
+    VertexBuffer *vb = new VertexBuffer(positions, 4 * 4 * sizeof(float));
     VertexBufferLayout* vbl = new VertexBufferLayout();
+    vbl->Push<float>(2);
     vbl->Push<float>(2);
     va->AddBuffer(*vb, *vbl);
 
@@ -74,7 +80,12 @@ int main(void)
     IndexBuffer* ib = new IndexBuffer(indices, 6);
 
     Shader* shader = new Shader("res/shaders/Basic.shader");
-    shader->SetUniform4f("u_Color", 0.3f, 0.5f, 0.8f, 1.0f);
+    //shader->SetUniform4f("u_Color", 0.3f, 0.5f, 0.8f, 1.0f);
+
+    Texture* texture = new Texture("res/textures/ronaldinho.png");
+    unsigned int slot = 0;
+    texture->Bind(slot);
+    shader->SetUniform1i("u_Texture", slot);
 
     /* To show that we can reuse the state of the created VAO
      * even if we unbind everything now
@@ -86,9 +97,6 @@ int main(void)
 
     Renderer* renderer = new Renderer();
 
-    float r_channel = 0.0f;
-    float g_channel = 0.0f;
-    float increment = 0.05f;
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -97,21 +105,8 @@ int main(void)
 
         // Prepare for draw call
         shader->Bind();
-        shader->SetUniform4f("u_Color", r_channel, g_channel, 0.8f, 1.0f);
         // Draw shape
         renderer->Draw(*va, *ib, *shader);
-        
-        // Animate the color of the shape
-        if (r_channel > 1.0f)
-        {
-            increment = -0.005f;
-        }
-        else if (r_channel < 0.0f)
-        {
-            increment = 0.005f;
-        }
-        r_channel += increment;
-        g_channel += increment;
 
         /* Swap front and back buffers */
         GLCallVoid(glfwSwapBuffers(window));
@@ -121,6 +116,7 @@ int main(void)
     }
 
     delete renderer;
+    delete texture;
     delete shader;
     delete ib;
     delete vbl;
