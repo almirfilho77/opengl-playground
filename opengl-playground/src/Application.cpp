@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-
 #include <exception>
 
 #include <GL/glew.h>
@@ -56,72 +55,67 @@ int main(void)
     GLCallVoid(glEnable(GL_BLEND));
     GLCallVoid(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    float positions[] = {
-        -0.5f,  -0.5f, 0.0f, 0.0f, //0
-         0.5f,  -0.5f, 1.0f, 0.0f, //1
-         0.5f,   0.5f, 1.0f, 1.0f, //2
-        -0.5f,   0.5f, 0.0f, 1.0f, //3
-    };
-
-    unsigned int indices[] = {
-        0, 1, 2,
-        2, 3, 0,
-    };
-
-    // Create a Vertex Array Object
-    VertexArray* va = new VertexArray();
-    VertexBuffer *vb = new VertexBuffer(positions, 4 * 4 * sizeof(float));
-    VertexBufferLayout* vbl = new VertexBufferLayout();
-    vbl->Push<float>(2);
-    vbl->Push<float>(2);
-    va->AddBuffer(*vb, *vbl);
-
-    // Index buffer object
-    IndexBuffer* ib = new IndexBuffer(indices, 6);
-
-    Shader* shader = new Shader("res/shaders/Basic.shader");
-    //shader->SetUniform4f("u_Color", 0.3f, 0.5f, 0.8f, 1.0f);
-
-    Texture* texture = new Texture("res/textures/ronaldinho.png");
-    unsigned int slot = 0;
-    texture->Bind(slot);
-    shader->SetUniform1i("u_Texture", slot);
-
-    /* To show that we can reuse the state of the created VAO
-     * even if we unbind everything now
-     */
-    va->Unbind();
-    vb->Unbind();
-    ib->Unbind();
-    shader->Unbind();
-
-    Renderer* renderer = new Renderer();
-
-    /* Loop until the user closes the window */
-    while (!glfwWindowShouldClose(window))
     {
-        /* Render here */
-        renderer->Clear();
+        float positions[] = {
+            -0.5f,  -0.5f, 0.0f, 0.0f, //0
+             0.5f,  -0.5f, 1.0f, 0.0f, //1
+             0.5f,   0.5f, 1.0f, 1.0f, //2
+            -0.5f,   0.5f, 0.0f, 1.0f, //3
+        };
 
-        // Prepare for draw call
-        shader->Bind();
-        // Draw shape
-        renderer->Draw(*va, *ib, *shader);
+        unsigned int indices[] = {
+            0, 1, 2,
+            2, 3, 0,
+        };
 
-        /* Swap front and back buffers */
-        GLCallVoid(glfwSwapBuffers(window));
+        // Create a Vertex Array Object
+        VertexArray va;
+        VertexBuffer vb(positions, 4 * 4 * sizeof(float));
+        
+        VertexBufferLayout vbl;
+        vbl.Push<float>(2);
+        vbl.Push<float>(2);
+        va.AddBuffer(vb, vbl);
 
-        /* Poll for and process events */
-        GLCallVoid(glfwPollEvents());
+        // Index buffer object
+        IndexBuffer ib(indices, 6);
+
+        Shader shader("res/shaders/Basic.shader");
+        //shader.SetUniform4f("u_Color", 0.3f, 0.5f, 0.8f, 1.0f);
+
+        Texture texture("res/textures/ronaldinho.png");
+        unsigned int slot = 0;
+        texture.Bind(slot);
+        shader.SetUniform1i("u_Texture", slot);
+
+        /* To show that we can reuse the state of the created VAO
+         * even if we unbind everything now
+         */
+        va.Unbind();
+        vb.Unbind();
+        ib.Unbind();
+        shader.Unbind();
+
+        Renderer renderer;
+
+        /* Loop until the user closes the window */
+        while (!glfwWindowShouldClose(window))
+        {
+            /* Render here */
+            renderer.Clear();
+
+            // Prepare for draw call
+            shader.Bind();
+            // Draw shape
+            renderer.Draw(va, ib, shader);
+
+            /* Swap front and back buffers */
+            GLCallVoid(glfwSwapBuffers(window));
+
+            /* Poll for and process events */
+            GLCallVoid(glfwPollEvents());
+        }
     }
-
-    delete renderer;
-    delete texture;
-    delete shader;
-    delete ib;
-    delete vbl;
-    delete vb;
-    delete va;
 
     glfwTerminate();
     return 0;
