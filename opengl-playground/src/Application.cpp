@@ -4,6 +4,8 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "Renderer.h"
 
@@ -80,12 +82,21 @@ int main(void)
         // Index buffer object
         IndexBuffer ib(indices, 6);
 
+        // Create orthographic projection matrix to compensate the aspect ratio
+        // (4x3) of the window when drawing a squared shape.
+        // When the shape (or texture) is already rectangular, applying the first matrix 
+        // makes it squared.
+        // 
+        //glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
+        glm::mat4 proj = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, -1.0f, 1.0f);
+
         Shader shader("res/shaders/Basic.shader");
 
         Texture texture("res/textures/ronaldinho.png");
         unsigned int slot = 0;
         texture.Bind(slot);
         shader.SetUniform1i("u_Texture", slot);
+        shader.SetUniformMat4f("u_MVP", proj);
 
         /* To show that we can reuse the state of the created VAO
          * even if we unbind everything now
