@@ -81,7 +81,6 @@ int main(void)
         IndexBuffer ib(indices, 6);
 
         Shader shader("res/shaders/Basic.shader");
-        //shader.SetUniform4f("u_Color", 0.3f, 0.5f, 0.8f, 1.0f);
 
         Texture texture("res/textures/ronaldinho.png");
         unsigned int slot = 0;
@@ -106,8 +105,17 @@ int main(void)
 
             // Prepare for draw call
             shader.Bind();
-            // Draw shape
+
+            // Draw shape with texture
             renderer.Draw(va, ib, shader);
+
+            // Draw shape (Blending example: blend a full opaque red square with a slight 
+            // translucid blue one). 
+            // NOTE: change the shader code so color = u_Color
+            /*shader.SetUniform4f("u_Color", 1.0f, 0.0f, 0.0f, 1.0f);
+            renderer.Draw(va, ib, shader);
+            shader.SetUniform4f("u_Color", 0.0f, 0.0f, 1.0f, 0.4f);
+            renderer.Draw(va, ib, shader);*/
 
             /* Swap front and back buffers */
             GLCallVoid(glfwSwapBuffers(window));
