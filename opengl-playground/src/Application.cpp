@@ -16,6 +16,13 @@
 #include "Shader.h"
 #include "Texture.h"
 
+struct WindowProjectionMatrixData
+{
+    int windowWidth;
+    int windowHeight;
+    glm::mat4 *windowProj;
+};
+
 
 int main(void)
 {
@@ -31,7 +38,9 @@ int main(void)
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);    // Need to explicitly create and bind VAO
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    int width = 960;
+    int height = 540;
+    window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
     if (!window)
     {
         std::cout << "Error: could not create GLFW window\n";
@@ -56,13 +65,31 @@ int main(void)
     // Enable alpha channel rendering
     GLCallVoid(glEnable(GL_BLEND));
     GLCallVoid(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    
+    // Create orthographic projection matrix to compensate the aspect ratio
+    // (4x3) of the window when drawing a squared shape.
+    // When the shape (or texture) is already rectangular, applying the first matrix 
+    // makes it squared.
+    // Actually, it transforms every pixel in the texture from the pixel space to the window space.
+    // 
+    glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
+    WindowProjectionMatrixData wpmd{ width, height, &proj };
+    glfwSetWindowUserPointer(window, &wpmd);
+    glfwSetWindowSizeCallback(window, [](GLFWwindow* res_window, int new_width, int new_height)
+        {
+            std::cout << "Window resized to [" << new_width << "][" << new_height << "]\n";
+            auto* wpmd = static_cast<WindowProjectionMatrixData *>(glfwGetWindowUserPointer(res_window));
+            *(wpmd->windowProj) = glm::ortho(0.0f, (float)new_width, 0.0f, (float)new_height, 0.0f, 1.0f);
+            wpmd->windowWidth = new_width;
+            wpmd->windowHeight = new_height;
+        });
 
     {
         float positions[] = {
-            -0.5f,  -0.5f, 0.0f, 0.0f, //0
-             0.5f,  -0.5f, 1.0f, 0.0f, //1
-             0.5f,   0.5f, 1.0f, 1.0f, //2
-            -0.5f,   0.5f, 0.0f, 1.0f, //3
+             200.0f,  50.0f,  1.0f, 0.0f, //1
+             200.0f,  150.0f, 1.0f, 1.0f, //2
+             50.0f,   150.0f, 0.0f, 1.0f, //3
+             50.0f,   50.0f,  0.0f, 0.0f, //0
         };
 
         unsigned int indices[] = {
@@ -81,14 +108,6 @@ int main(void)
 
         // Index buffer object
         IndexBuffer ib(indices, 6);
-
-        // Create orthographic projection matrix to compensate the aspect ratio
-        // (4x3) of the window when drawing a squared shape.
-        // When the shape (or texture) is already rectangular, applying the first matrix 
-        // makes it squared.
-        // 
-        //glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f, -1.0f, 1.0f);
-        glm::mat4 proj = glm::ortho(-0.5f, 0.5f, -0.5f, 0.5f, -1.0f, 1.0f);
 
         Shader shader("res/shaders/Basic.shader");
 
@@ -111,6 +130,8 @@ int main(void)
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
+            shader.SetUniformMat4f("u_MVP", proj);
+
             /* Render here */
             renderer.Clear();
 
