@@ -16,13 +16,6 @@
 #include "Shader.h"
 #include "Texture.h"
 
-struct WindowProjectionMatrixData
-{
-    int windowWidth;
-    int windowHeight;
-    glm::mat4 *windowProj;
-};
-
 
 int main(void)
 {
@@ -73,16 +66,9 @@ int main(void)
     // Actually, it transforms every pixel in the texture from the pixel space to the window space.
     // 
     glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-    WindowProjectionMatrixData wpmd{ width, height, &proj };
-    glfwSetWindowUserPointer(window, &wpmd);
-    glfwSetWindowSizeCallback(window, [](GLFWwindow* res_window, int new_width, int new_height)
-        {
-            std::cout << "Window resized to [" << new_width << "][" << new_height << "]\n";
-            auto* wpmd = static_cast<WindowProjectionMatrixData *>(glfwGetWindowUserPointer(res_window));
-            *(wpmd->windowProj) = glm::ortho(0.0f, (float)new_width, 0.0f, (float)new_height, 0.0f, 1.0f);
-            wpmd->windowWidth = new_width;
-            wpmd->windowHeight = new_height;
-        });
+    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(400.0f, 0, 0));
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 200.0f, 0.0f));
+    glm::mat4 mvp = proj * view * model;
 
     {
         float positions[] = {
@@ -115,7 +101,7 @@ int main(void)
         unsigned int slot = 0;
         texture.Bind(slot);
         shader.SetUniform1i("u_Texture", slot);
-        shader.SetUniformMat4f("u_MVP", proj);
+        shader.SetUniformMat4f("u_MVP", mvp);
 
         /* To show that we can reuse the state of the created VAO
          * even if we unbind everything now
@@ -130,7 +116,7 @@ int main(void)
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
-            shader.SetUniformMat4f("u_MVP", proj);
+            shader.SetUniformMat4f("u_MVP", mvp);
 
             /* Render here */
             renderer.Clear();
